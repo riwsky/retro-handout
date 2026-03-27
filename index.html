@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Project Retrospective: AI-Powered Browser Automation for Insurance Portal Auth</title>
+  <link rel="stylesheet" href="https://edwardtufte.github.io/tufte-css/tufte.css" />
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/roughjs@4/bundled/rough.js"></script>
+  <style>
+    /* Tufte overrides and custom styles */
+    body {
+      background: #fffff8;
+      color: #111;
+    }
+
+    article {
+      padding-top: 2rem;
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+
+    h2 {
+      margin-top: 3rem;
+    }
+
+    h3 {
+      margin-top: 2rem;
+      font-style: normal;
+    }
+
+    /* Mermaid diagram containers */
+    .diagram-container {
+      margin: 1.5rem 0;
+      width: 55%;
+    }
+
+    .diagram-container.fullwidth {
+      width: 100%;
+      max-width: none;
+      clear: both;
+    }
+
+    .diagram-container .mermaid {
+      text-align: center;
+    }
+
+    /* Scatterplot */
+    #pareto-plot {
+      margin: 1.5rem 0;
+      position: relative;
+    }
+
+    #pareto-plot svg {
+      overflow: visible;
+    }
+
+    .plot-tooltip {
+      position: absolute;
+      background: #fffff8;
+      border: 1px solid #999;
+      padding: 0.6rem 0.9rem;
+      font-family: et-book, Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      max-width: 280px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 10;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+    }
+
+    .plot-tooltip.visible {
+      opacity: 1;
+    }
+
+    .plot-tooltip strong {
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+
+    /* Evolution tabs */
+    .evo-tabs {
+      margin: 1.5rem 0;
+      width: 87.5%;
+      /* full-width in Tufte */
+    }
+
+    .evo-tab-bar {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid #333;
+    }
+
+    .evo-tab-bar button {
+      font-family: et-book, Palatino, "Palatino Linotype", "Palatino LT STD", "Book Antiqua", Georgia, serif;
+      font-size: 0.9rem;
+      padding: 0.5rem 1.2rem;
+      background: #eee;
+      border: 1px solid #ccc;
+      border-bottom: none;
+      cursor: pointer;
+      position: relative;
+      top: 2px;
+      border-radius: 4px 4px 0 0;
+      color: #555;
+    }
+
+    .evo-tab-bar button.active {
+      background: #fffff8;
+      border-color: #333;
+      border-bottom: 2px solid #fffff8;
+      color: #111;
+      font-weight: bold;
+    }
+
+    .evo-panel {
+      display: none;
+      padding: 1.2rem 1.5rem;
+      border: 1px solid #ccc;
+      border-top: none;
+      background: #fffff8;
+      line-height: 1.6;
+    }
+
+    .evo-panel.active {
+      display: block;
+    }
+
+    .evo-panel h4 {
+      margin-top: 0;
+      font-style: normal;
+    }
+
+    .evo-panel code {
+      font-size: 0.8rem;
+      background: #f0f0f0;
+      padding: 0.1em 0.3em;
+      border-radius: 2px;
+    }
+
+    .evo-panel .change-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.15em 0.5em;
+      border-radius: 3px;
+      margin-right: 0.4em;
+      vertical-align: middle;
+    }
+
+    .change-tag.added {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .change-tag.changed {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .change-tag.removed {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    /* Key-value pairs for architecture details */
+    dl.compact {
+      margin: 0.5rem 0;
+    }
+
+    dl.compact dt {
+      font-weight: bold;
+      float: left;
+      clear: left;
+      width: 7rem;
+      margin: 0;
+    }
+
+    dl.compact dd {
+      margin-left: 7.5rem;
+      margin-bottom: 0.3rem;
+    }
+
+    /* Results comparison table */
+    section table {
+      border-collapse: collapse;
+      width: 55%;
+      font-size: 0.9rem;
+      margin: 1rem 0;
+    }
+
+    section table th,
+    section table td {
+      text-align: left;
+      padding: 0.4rem 0.8rem;
+      border-bottom: 1px solid #ddd;
+      vertical-align: top;
+    }
+
+    section table thead th {
+      border-bottom: 2px solid #333;
+      font-weight: bold;
+    }
+
+    section table td.unsupported {
+      color: #999;
+      font-style: italic;
+    }
+
+    /* Print styles */
+    @media print {
+      .evo-panel {
+        display: block !important;
+        page-break-inside: avoid;
+      }
+
+      .evo-tab-bar {
+        display: none;
+      }
+
+      .plot-tooltip {
+        display: none;
+      }
+
+      .no-print {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <article>
+
+    <h1>AI-Powered Browser Automation for Insurance&nbsp;Portal&nbsp;Auth</h1>
+    <p class="subtitle">Prose &mdash; Will Cybriwsky</p>
+    <p class="subtitle">Formatting and Diagrams &mdash; Claude (feat. tufte-css, mermaidjs, and d3)
+    </p>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <section>
+      <h2>Problem</h2>
+
+
+      <p>
+        <label for="mn-hipaa" class="margin-toggle">&#8853;</label>
+        <input type="checkbox" id="mn-hipaa" class="margin-toggle" />
+        <span class="marginnote">
+          <strong>What about HIPAA?</strong>
+          most users need to sign a release before their insurers will speak to us on their behalf.
+          But those in-the-know might also ask why we didn't use the HIPAA-mandated APIs—the answer is that
+          Granted initially did, but those APIs do not include important info &mdash; most critically, dollar
+          amounts.
+        </span>
+        <span class="newthought"><a href="https://grantedhealth.com/">Granted</a> is a consumer app</span> that helps
+        people navigate the healthcare system:
+        everything from choosing a plan, to finding a doctor, to fighting insurance claim denials.
+        Step one for most of these workflows is to get the user&rsquo;s information: things like explanations of
+        benefits, claims
+        details, or member&nbsp;ID cards.
+        To save users the hassle of collecting that info themselves, we let them sign into their insurer's web portal
+        through our app, a stateful process that looks roughly like:
+      </p>
+
+      <figure class="fullwidth">
+        <div class="diagram-container fullwidth">
+          <pre class="mermaid">
+stateDiagram-v2
+    [*] --> LoginPageLoaded : navigate to loginUrl
+
+    LoginPageLoaded --> CredentialsSubmitted : fill username + password
+
+    CredentialsSubmitted --> CredentialsErrored : invalid credentials
+    CredentialsSubmitted --> MfaOptionsPresented : MFA required (multiple methods)
+    CredentialsSubmitted --> MfaCodeEntry : MFA required (single method)
+    CredentialsSubmitted --> SecurityQuestion : security question presented
+    CredentialsSubmitted --> Success : direct login
+
+    CredentialsErrored --> CredentialsSubmitted : try with new creds
+
+    MfaOptionsPresented --> MfaCodeEntry : user selects method
+
+    MfaCodeEntry --> MfaCodeErrored : wrong code
+    MfaCodeEntry --> SecurityQuestion : additional verification
+    MfaCodeEntry --> Success : authenticated
+
+    MfaCodeErrored --> MfaCodeEntry : retry
+
+    SecurityQuestion --> SecurityQuestionErrored : wrong answer
+    SecurityQuestion --> Success : correct answer
+
+    SecurityQuestionErrored --> SecurityQuestion : retry
+
+    Success --> [*]
+</pre>
+        </div>
+      </figure>
+
+
+      <p>
+        Web browser automation long predates LLMs—and indeed, when I arrived at Granted, some AI-free code
+        handled some big insurers, like United, Aetna, Cigna, and Blue Cross. Unlike many AI-replacing-coding stories,
+        the problem with expanding beyond those four wasn't dev costs, but account access: fake-enrolling in health
+        insurance
+        just so we could reverse-engineer these login flows would be expensive and legally unwise, and getting
+        users to partner with us long enough for devs to do it would be slow (and a bad UX for the first users from each
+        insurer).
+        But when AI is good enough and fast enough to do that reverse-engineering synchronously, as a user signs in,
+        that
+        quantitative difference in speed (vs devs) becomes a qualitative difference—we can support the long tail:
+        <label for="mn-squint" class="margin-toggle">&#8853;</label>
+        <input type="checkbox" id="mn-squint" class="margin-toggle" />
+        <span class="marginnote">
+          If you squint, the problem of "sign in to an insurer portal we've never seen before" contains, as a special
+          case, the problem of "sign in to a portal we've seen before, but that just updated its login pages" - and the
+          AI approach indeed handled changes like that which had broken the hard-coded selectors.
+          We collect both kinds of novelty handling as "robustness", below.
+        </span>
+      </p>
+
+      <figure>
+        <div id="powerlaw-bare"></div>
+      </figure>
+
+      <p>
+        Roughly, our goal was to <strong>minimize latency and dev effort, and maximize completion rate,</strong>
+        <label for="mn-completion-rate" class="margin-toggle">&#8853;</label>
+        <input type="checkbox" id="mn-completion-rate" class="margin-toggle" />
+        <span class="marginnote">
+          We used <em>"completion rate"</em> instead of "reliability" because
+          users forgetting their credentials or quitting mid-process aren't problems
+          of software reliability <em>per se</em>. While we <em>had</em> initially focused on bare reliability,
+          completion rates more directly
+          represented the business impact—and the difference mattered enough in practice to make explicit. Beyond
+          turning
+          performance into a constraint (since slowness was a main reason for quitting), this also drove product
+          features like guides on how to reset passwords at major insurers, or a survey prompt for quit reasons, or
+          surfacing a technical support email distinct from our normal healthcare-navigation case flow.
+          Eventually, our target completion rate was 90% (reliability <em>per se</em> was generally well above that).
+        </span>
+        <strong>subject to the constraint of supporting
+          the long tail of insurers.</strong>
+      </p>
+
+
+    </section>
+
+    <section>
+      <h2>The Robustness&ndash;Speed Frontier</h2>
+
+      <p>
+        <span class="newthought">The system faces a tradeoff</span> between reliability on novel portals
+        and speed on known ones:
+      </p>
+
+      <figure>
+        <div id="pareto-plot"></div>
+        <div class="plot-tooltip" id="pareto-tooltip"></div>
+      </figure>
+
+      <p>
+        On the top left, you have our pre-AI setup of hand-written element selectors for each portal.
+        Moving to the right (more robust) and down (slower),
+        <label for="mn-slower" class="margin-toggle">&#8853;</label>
+        <input type="checkbox" id="mn-slower" class="margin-toggle" />
+        <span class="marginnote">
+          <strong>How much slower?</strong> I don't have exact numbers in front of me—I quit a few months
+          ago—but roughly 90 seconds for the fully-agentic version vs roughly 30 seconds to the hard-coded one (ignoring
+          time blocked on user input). The round-trips to the browsers were the main bottleneck—performance
+          work in the LLM-using implementations focused on reducing those instead of request latency <em>per se</em>.
+          For example: higher-order tools like
+          "fillUsernameAndPassword", that took selectors for the inputs + submit button all at once,
+          instead of prompting the LLM to parallelize fills and clicks.
+        </span>
+        we have one-shot prompts to recognize pages,
+        and a fully agentic approach where the LLM is aware of the whole navigation history itself. So, which one did
+        we choose?
+        <strong>All of them:</strong>
+      </p>
+
+      <figure>
+        <div id="powerlaw-plot"></div>
+      </figure>
+
+      <p>
+        <label for="mn-race" class="margin-toggle">&#8853;</label>
+        <input type="checkbox" id="mn-race" class="margin-toggle" />
+        <span class="marginnote">
+          An example of when the single-page prompts needed to fall back to the full agent is when we first encountered
+          an MFA entry screen with separate inputs per-digit: the prompt had been locked into providing one selector
+          for the code input + one for the submit button, never needing to see the user's digits, whereas the full agent
+          was free to make individual fill and click calls, with the digits in context.
+          It also helped deal with novel page states, like if an insurer presented users with a full survey screen upon
+          signing in.
+        </span>
+        Maintaining three approaches is more complicated than one, especially given that we supported
+        switching between them within a single login session (if, say, the element selectors for the MFA page were
+        misconfigured, we'd still get the speed boost for the initial page, and then the single-page prompts would kick
+        in for the MFA page).
+        So this tripled implementation is <em>not</em> what we went with out of the gate: we started correct with the
+        full agent, then only introduced complexity later on when we'd measured performance and UX impacts and
+        prioritized more work
+        here.
+      </p>
+
+
+    </section>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <section>
+      <h2>System Architecture</h2>
+
+
+      <figure class="fullwidth">
+        <div class="diagram-container fullwidth">
+          <pre class="mermaid">
+flowchart TB
+  subgraph Client["Clients"]
+    Mobile["React Native"]
+    Web["Next.js"]
+  end
+
+  NEST["NestJS"]
+  Temporal["Temporal"]
+  DB["Gel\n(Database)"]
+
+  Engine["Sign-In Engine"]
+  Config["Configured\nSelectors"]
+  AI["Agent"]
+  SS["Single-Shot Prompts"]
+  PW["Playwright\n(via Browserbase)"]
+
+  Mobile -->|"GraphQL"| NEST
+  Web -->|"GraphQL"| NEST
+  NEST --> Temporal
+  Temporal --> Engine
+  Engine -->|"race"| Config
+  Engine -->|"race"| AI
+  Engine -->|"race"| SS
+  Config --> PW
+  AI --> PW
+  SS --> PW
+  PW -->|"filtered HTML, screenshots, etc"| Engine
+  Engine -.->|"updates"| Temporal
+  NEST --> DB
+  Engine --> DB
+
+  click Mobile href "https://reactnative.dev/" _blank
+  click Web href "https://nextjs.org/" _blank
+  click NEST href "https://nestjs.com/" _blank
+  click Temporal href "https://temporal.io/" _blank
+  click DB href "https://www.geldata.com/" _blank
+  click PW href "https://www.browserbase.com/" _blank
+</pre>
+        </div>
+      </figure>
+
+
+    </section>
+
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <section>
+      <h2>Operability &amp; Observability</h2>
+
+      <p>
+        <strong>OpenTelemetry:</strong> distributed tracing, exported to <a
+          href="https://www.honeycomb.io/">Honeycomb</a>.
+        Every sign-in attempt is a trace that spans the full stack: GraphQL mutation &rarr; Temporal workflow &rarr;
+        Playwright interactions &rarr; LLM calls. Each layer annotates the trace
+        with its own attributes (e.g., <code>browserbase.session.advanced_stealth_enabled</code>).
+      </p>
+
+      <p>
+        <strong>Playwright traces:</strong> allowed us to reconstruct the DOM for debugging.
+        <label for="mn-click" class="margin-toggle">&#8853;</label>
+        <input type="checkbox" id="mn-click" class="margin-toggle" />
+        <span class="marginnote">
+          Portals that we needed to debug tended to be bug real users, too. Investigating one issue with
+          United,
+          I came upon a whole forum thread from a retirement community
+          complaining about the same error message (presumably having been caught in some bad IP block,
+          or using accessibility devices that produced bot-like interaction patterns).
+        </span>
+        When we rolled out
+        the hybrid system, we also used these as a source for configured selectors, letting more portals get that
+        top tier of performance.
+      </p>
+
+      <p>
+        <strong>Internal dashboard:</strong> We tracked the highest-signal data in our database
+        as well as traces, so we could run longer-term analytics on them, or include them as context on
+        evals. That data also powered attempts to automate tuning of the system (multi-armed bandit
+        for e.g. stealth or proxy settings per insurer, to maximize antibot-avoidance), but those ended up
+        being more complexity than they were worth.
+      </p>
+
+      <p>
+        <strong>LLM-as-judge:</strong>
+        <label for="mn-judge" class="margin-toggle">&#8853;</label>
+        <input type="checkbox" id="mn-judge" class="margin-toggle" />
+        <span class="marginnote">
+          Judginess was also the source of a pretty avant-garde bug: our intercepting MFA
+          for users and accessing PHI had been occasionally triggering refusals at the LLM API level—but when we
+          explained
+          (in-prompt) that this was done with user consent, and that the adversarial reverse-engineering task was
+          merely an epiphenomenon
+          of broken financial incentives in the health system, the refusals went away.
+        </span>
+        I fed my notes and tags from manual reviews of sign-in attempts into training an LLM
+        to characterize results for us. Useful to automatically distinguish reliability failures (i.e., bugs) from
+        mere incompletions (e.g. user quitting).
+      </p>
+
+      <p>
+        <strong>Simulation testing:</strong> we had a gauntlet of simulated insurance portal flows to exercise
+        control flow or specific scenarios, as well as some more isolated snapshots from real production pages
+        to check the prompts still held up under noisier real-world HTML (which tended to be much gnarlier than our
+        vibe-coded playground apps).
+      </p>
+
+    </section>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <section>
+      <h2>Collaboration</h2>
+
+      <p>
+        <span class="newthought">I did plenty of the frontend engineering</span> for this feature, though
+        Granted also had a dedicated PM and a dedicated Designer who directed how that frontend should behave.
+      </p>
+
+      <p>
+        What happened after sign-in was primarily the responsibility of two of my teammates, one of which owned the
+        crawl of the portals to find data, and the other of which owned the ingestion and normalization of that data
+        into roughly FHIR-ey shapes.
+      </p>
+
+      <p>
+        We also collaborated with Browserbase, a company specializing in Playwright proxying and
+        stealth services. Bot detection is a cat-and-mouse game—and with large insurers employing companies
+        like Akamai, that have more bot-detection engineers than Granted has employees, we would not be
+        effective players of it.
+      </p>
+
+    </section>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <section>
+      <h2>Reflection</h2>
+
+      <p>
+        <span class="newthought">If I were starting over,</span> I would:
+      </p>
+
+      <p>
+        <strong>Lean on vendors for anti-anti-bot measures more, and sooner.</strong> A lot of the value in the design
+        came
+        from the leverage that the insurer size power-law gives us: focusing performance upgrades on the top portals is
+        way more
+        worth it when they're responsible for an outsize share of users—but when it came to anti-bot detection, that
+        asymmetry
+        meant our efforts were way <em>less</em> worth it.
+      </p>
+
+      <p>
+        <strong>Let agents run end-to-end simulations sooner.</strong>
+        These were originally more at the unit-test level, and I'd reserved end-to-end testing for
+        real insurer websites. While this tradeoff made sense when comparing human dev effort required to run the two
+        kinds of tests,
+        the real difference-maker was in letting agents exercise more of their logic and control flow independently.
+      </p>
+
+      <p><strong>Avoid <em>pre</em>-inventing the wheel:</strong> When I first set out to build this, the AI tooling and
+        browsing landscape was in its infancy.
+        In the time since, libraries have come out that either directly line up with work we did (e.g. OpenAI's
+        TypeScript packages gained built-in <a href="https://zod.dev/">zod</a> support) or have built higher-level
+        interfaces (e.g. browserbase's
+        <a href="https://www.stagehand.dev/">stagehand</a> library)—while
+        they were not an option when we started, and we have adopted them in places, they're still something that
+        would look different if starting that project today.
+      </p>
+
+    </section>
+
+    <section>
+      <h2>Results</h2>
+
+      <p><span class="newthought">The system unlocked portals beyond our own insurers,</span>
+        <label for="mn-ehr" class="margin-toggle">&#8853;</label>
+        <input type="checkbox" id="mn-ehr" class="margin-toggle" />
+        <span class="marginnote">We also threw the sign-in agent at EHRs during a hackathon, and it worked without
+          changes.
+        </span> before we gradually added complexity to bring
+        performance back up to par with hand-coded approaches.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Before: Hardcoded</th>
+            <th>Initial: Fully-agentic</th>
+            <th>Final: Hybrid</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Big insurers</strong></td>
+            <td>~30s, fragile</td>
+            <td>≥90s, resilient</td>
+            <td>~30s, resilient</td>
+          </tr>
+          <tr>
+            <td><strong>Mid-tier</strong> (portal matches state machine)</td>
+            <td class="unsupported">unsupported</td>
+            <td>≥90s, resilient</td>
+            <td>~45s, resilient</td>
+          </tr>
+          <tr>
+            <td><strong>Long tail</strong> (novel flows)</td>
+            <td class="unsupported">unsupported</td>
+            <td>≥90s, resilient</td>
+            <td>≥90s, resilient</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <section>
+      <h2>Appendix: Temporal Workflow Lifecycle</h2>
+
+      <p>The interactive sign-in flow, from the user&rsquo;s perspective:</p>
+
+      <figure class="fullwidth">
+        <div class="diagram-container fullwidth">
+          <pre class="mermaid">
+sequenceDiagram
+    participant U as User (Mobile App)
+    participant G as GraphQL API
+    participant T as Temporal Workflow
+    participant B as Browserbase + Playwright
+    participant S as Sign-In Engine
+
+    U->>G: startLinkSignIn(linkId)
+    G->>T: start userTriggeredCrawlerWorkflow
+    T->>B: create CDP session (bandit selects stealth/proxy strategy)
+    B->>S: initialize Playwright page
+
+    S->>S: navigate to loginUrl
+    S->>S: race(config, AI) → recognize login page
+
+    T-->>G: update status: PROMPTING_CREDENTIALS
+    G-->>U: show credentials prompt
+
+    U->>G: submitLoginDetails(username, password)
+    G->>T: Temporal update → submitLoginDetails
+    T->>S: provide credentials
+
+    S->>S: race(config, AI) → fill + submit credentials
+    S->>S: race(config, AI) → recognize post-login state
+
+    alt MFA Required
+        T-->>G: update status: PROMPTING_MFA_METHOD
+        G-->>U: show MFA options
+        U->>G: selectMfaMethod(SMS)
+        G->>T: Temporal update → selectMfaMethod
+        T->>S: select MFA method
+
+        T-->>G: update status: PROMPTING_MFA_CODE
+        G-->>U: show MFA code input
+        U->>G: submitMfaCode(123456)
+        G->>T: Temporal update → submitMfaCode
+        T->>S: enter MFA code
+    end
+
+    S->>S: recognize success
+    T-->>G: update status: LOGGED_IN
+    T->>B: begin data extraction (crawl objectives)
+    G-->>U: show claims data
+</pre>
+        </div>
+      </figure>
+
+    </section>
+
+  </article>
+
+  <script>
+    // ── Mermaid initialization ──
+    mermaid.initialize({
+      startOnLoad: true,
+      securityLevel: 'loose',
+      theme: 'neutral',
+      themeVariables: {
+        fontFamily: 'et-book, Palatino, "Palatino Linotype", Georgia, serif',
+        fontSize: '14px',
+      },
+      flowchart: { curve: 'basis', padding: 20 },
+      sequence: { mirrorActors: false, messageMargin: 40 },
+      stateDiagram: { defaultRenderer: 'dagre' },
+    });
+
+    // ── Evolution tabs ──
+    function showTab(index) {
+      document.querySelectorAll('.evo-tab-bar button').forEach((btn, i) => {
+        btn.classList.toggle('active', i === index);
+      });
+      document.querySelectorAll('.evo-panel').forEach((panel, i) => {
+        panel.classList.toggle('active', i === index);
+      });
+    }
+
+    // ── Pareto frontier scatterplot (D3) ──
+    document.addEventListener('DOMContentLoaded', () => {
+      const data = [
+        {
+          name: "Configured Selectors",
+          robustness: 0.15,
+          speed: 0.92,
+          color: "#4a7c9b",
+          description: "Hand-coded XPath selectors for known portals (Cigna, UHC, Anthem). Fastest path\u2009\u2014\u2009pure deterministic code, no LLM calls. Breaks when a portal redesigns. Covers the ~20 highest-traffic portals.",
+          failure: "Portal redesign, new form layout, changed element IDs"
+        },
+        {
+          name: "Per-Page Prompts",
+          robustness: 0.6,
+          speed: 0.55,
+          color: "#4a7c9b",
+          description: "Single LLM call with page screenshot + filtered HTML. The model identifies form fields and returns a structured response. Works on most standard login forms without prior configuration.",
+          failure: "Non-standard layouts, multi-step forms, CAPTCHAs"
+        },
+        {
+          name: "Full Multi-Turn Agent",
+          robustness: 0.95,
+          speed: 0.12,
+          color: "#4a7c9b",
+          description: "Claude with vision iterating over page state with the full browsing tool suite (click, type, scroll, screenshot). Handles novel portals, unusual MFA flows, and unexpected intermediate screens. Most expensive in tokens and time.",
+          failure: "Hard bot blocks (IP ban), CAPTCHA walls, portals requiring email-link authentication"
+        },
+      ];
+
+      const allPoints = data;
+
+      const margin = { top: 30, right: 30, bottom: 50, left: 60 };
+      const width = 520, height = 400;
+      const inner = { w: width - margin.left - margin.right, h: height - margin.top - margin.bottom };
+
+      const x = d3.scaleLinear().domain([0, 1]).range([0, inner.w]);
+      const y = d3.scaleLinear().domain([0, 1]).range([inner.h, 0]);
+
+      const container = document.getElementById('pareto-plot');
+      const tooltip = document.getElementById('pareto-tooltip');
+
+      const svg = d3.select(container).append('svg')
+        .attr('width', width).attr('height', height)
+        .attr('viewBox', `0 0 ${width} ${height}`)
+        .style('overflow', 'visible');
+
+      const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+      const rc = rough.svg(svg.node());
+      const rOpts = { seed: 1 };
+
+      // Axes
+      g.append('g').attr('transform', `translate(0,${inner.h})`)
+        .call(d3.axisBottom(x).ticks(0).tickSize(0))
+        .call(g => g.select('.domain').attr('stroke', '#999'));
+      g.append('g')
+        .call(d3.axisLeft(y).ticks(0).tickSize(0))
+        .call(g => g.select('.domain').attr('stroke', '#999'));
+
+      // Axis labels
+      g.append('text').attr('x', inner.w / 2).attr('y', inner.h + 40)
+        .attr('text-anchor', 'middle').attr('font-size', '13px').attr('fill', '#333')
+        .attr('font-family', 'et-book, Palatino, Georgia, serif')
+        .text('Robustness (handles novel portals) \u2192');
+      g.append('text').attr('transform', 'rotate(-90)').attr('x', -inner.h / 2).attr('y', -45)
+        .attr('text-anchor', 'middle').attr('font-size', '13px').attr('fill', '#333')
+        .attr('font-family', 'et-book, Palatino, Georgia, serif')
+        .text('Speed (low latency) \u2192 ');
+
+      // Low/High labels
+      g.append('text').attr('x', x(0.02)).attr('y', inner.h + 22).attr('font-size', '10px').attr('fill', '#999').text('Low');
+      g.append('text').attr('x', x(0.96)).attr('y', inner.h + 22).attr('font-size', '10px').attr('fill', '#999').attr('text-anchor', 'end').text('High');
+      g.append('text').attr('x', -10).attr('y', y(0.02)).attr('font-size', '10px').attr('fill', '#999').attr('text-anchor', 'end').text('Low');
+      g.append('text').attr('x', -10).attr('y', y(0.97)).attr('font-size', '10px').attr('fill', '#999').attr('text-anchor', 'end').text('High');
+
+      // Dashed frontier curve through the 3 base points
+      const line = d3.line().x(d => x(d.robustness)).y(d => y(d.speed)).curve(d3.curveCatmullRom);
+      const curveD = line(data);
+      g.node().appendChild(rc.path(curveD, {
+        ...rOpts, stroke: '#bbb', strokeWidth: 1.5, fill: 'none',
+        roughness: 1.5, strokeLineDash: [6, 4]
+      }));
+
+      // Points
+      data.forEach(d => {
+        g.node().appendChild(rc.circle(x(d.robustness), y(d.speed), 16, {
+          ...rOpts, fill: '#4a7c9b', stroke: '#2a5a7b', strokeWidth: 1.5,
+          fillStyle: 'solid', roughness: 1
+        }));
+      });
+
+      // Labels
+      g.selectAll('.frontier-label').data(data).enter().append('text')
+        .attr('x', d => x(d.robustness)).attr('y', d => y(d.speed) - 14)
+        .attr('text-anchor', 'middle').attr('font-size', '11.5px').attr('font-weight', 'bold')
+        .attr('fill', '#333').attr('font-family', 'et-book, Palatino, Georgia, serif')
+        .text(d => d.name);
+
+      // Hover interaction
+      svg.on('mousemove', (event) => {
+        const [mx, my] = d3.pointer(event, g.node());
+        const dataX = x.invert(mx), dataY = y.invert(my);
+
+        let closest = null, minDist = Infinity;
+        for (const pt of allPoints) {
+          const dist = Math.hypot(pt.robustness - dataX, pt.speed - dataY);
+          if (dist < minDist) { minDist = dist; closest = pt; }
+        }
+
+        if (closest && minDist < 0.15) {
+          tooltip.innerHTML = `<strong>${closest.name}</strong>${closest.description}<br/><br/><em>Failure modes: ${closest.failure}</em>`;
+          tooltip.classList.add('visible');
+          const rect = container.getBoundingClientRect();
+          tooltip.style.left = (event.clientX - rect.left + 15) + 'px';
+          tooltip.style.top = (event.clientY - rect.top - 10) + 'px';
+        } else {
+          tooltip.classList.remove('visible');
+        }
+      });
+
+      svg.on('mouseleave', () => tooltip.classList.remove('visible'));
+
+      // ── Power-law insurer distribution chart ──
+      const plContainer = document.getElementById('powerlaw-plot');
+      const plMargin = { top: 20, right: 30, bottom: 50, left: 60 };
+      const plWidth = 520, plHeight = 300;
+      const plInner = { w: plWidth - plMargin.left - plMargin.right, h: plHeight - plMargin.top - plMargin.bottom };
+
+      // Pareto PDF: f(x) = k*(1-x)^(k-1), where k is chosen so that
+      // the integral from 0 to 0.2 is 80% of the total area.
+      // F(0.2) = 1 - 0.8^k = 0.8  =>  k = ln(0.2)/ln(0.8) ≈ 7.21
+      const k = Math.log(0.2) / Math.log(0.8);
+      const nSteps = 200;
+      const plData = [];
+      for (let i = 0; i <= nSteps; i++) {
+        const x = i / nSteps;
+        plData.push({ rank: x, density: k * Math.pow(1 - x, k - 1) });
+      }
+
+      const yMax = plData[0].density; // peak at x=0
+      const plX = d3.scaleLinear().domain([0, 1]).range([0, plInner.w]);
+      const plY = d3.scaleLinear().domain([0, yMax * 1.05]).range([plInner.h, 0]);
+
+      const plSvg = d3.select(plContainer).append('svg')
+        .attr('width', plWidth).attr('height', plHeight)
+        .attr('viewBox', `0 0 ${plWidth} ${plHeight}`)
+        .style('overflow', 'visible');
+
+      const plG = plSvg.append('g').attr('transform', `translate(${plMargin.left},${plMargin.top})`);
+      const rcPl = rough.svg(plSvg.node());
+
+      // Axes — minimal, no ticks on Y (illustrative)
+      plG.append('g').attr('transform', `translate(0,${plInner.h})`)
+        .call(d3.axisBottom(plX).ticks(5).tickFormat(d => Math.round(d * 100) + '%'))
+        .call(g => g.select('.domain').attr('stroke', '#999'))
+        .selectAll('text').attr('font-family', 'et-book, Palatino, Georgia, serif').attr('font-size', '11px');
+      plG.append('g')
+        .call(d3.axisLeft(plY).ticks(0).tickSize(0))
+        .call(g => g.select('.domain').attr('stroke', '#999'));
+
+      // Axis labels
+      plG.append('text').attr('x', plInner.w / 2).attr('y', plInner.h + 40)
+        .attr('text-anchor', 'middle').attr('font-size', '13px').attr('fill', '#333')
+        .attr('font-family', 'et-book, Palatino, Georgia, serif')
+        .text('Insurer portals (ranked by traffic) \u2192');
+      plG.append('text').attr('transform', 'rotate(-90)').attr('x', -plInner.h / 2).attr('y', -20)
+        .attr('text-anchor', 'middle').attr('font-size', '13px').attr('fill', '#333')
+        .attr('font-family', 'et-book, Palatino, Georgia, serif')
+        .text('Users \u2192');
+
+      const area = d3.area()
+        .x(d => plX(d.rank)).y0(plInner.h).y1(d => plY(d.density))
+        .curve(d3.curveMonotoneX);
+
+      // Three tiers: 80% config selectors, 16% per-page prompts, 4% full agent
+      // CDF: F(x) = 1 - (1-x)^k. Solve for cutoff where F(x) = target:
+      //   x = 1 - (1-target)^(1/k)
+      const cut1 = 0.20; // F(0.2) = 0.80 by construction
+      const cut2 = 1 - Math.pow(0.04, 1 / k); // F(cut2) = 0.96, so 96-80 = 16% in middle tier
+
+      const configData = plData.filter(d => d.rank <= cut1);
+      const promptData = plData.filter(d => d.rank >= cut1 && d.rank <= cut2);
+      const agentData = plData.filter(d => d.rank >= cut2);
+
+      const densityAt = (xVal) => k * Math.pow(1 - xVal, k - 1);
+
+      // Draw three areas back-to-front (sketchy)
+      plG.node().appendChild(rcPl.path(area(agentData), {
+        ...rOpts, fill: '#e0e0e0', stroke: 'none', fillStyle: 'solid', roughness: 1.5
+      }));
+      plG.node().appendChild(rcPl.path(area(promptData), {
+        ...rOpts, fill: '#8ab0c4', stroke: 'none', fillStyle: 'solid',
+        fillWeight: 0.5, roughness: 1.5
+      }));
+      plG.node().appendChild(rcPl.path(area(configData), {
+        ...rOpts, fill: '#4a7c9b', stroke: 'none', fillStyle: 'solid',
+        fillWeight: 0.5, roughness: 1.5
+      }));
+
+      // Curve line on top
+      const plLine = d3.line().x(d => plX(d.rank)).y(d => plY(d.density)).curve(d3.curveMonotoneX);
+      plG.node().appendChild(rcPl.path(plLine(plData), {
+        ...rOpts, stroke: '#333', strokeWidth: 2, fill: 'none', roughness: 1.5
+      }));
+
+      // Vertical dashed lines at cutoffs
+      plG.node().appendChild(rcPl.line(plX(cut1), plInner.h, plX(cut1), plY(densityAt(cut1)), {
+        ...rOpts, stroke: '#2a5a7b', strokeWidth: 1.5, strokeLineDash: [4, 3], roughness: 1
+      }));
+      plG.node().appendChild(rcPl.line(plX(cut2), plInner.h, plX(cut2), plY(densityAt(cut2)), {
+        ...rOpts, stroke: '#6a8fa5', strokeWidth: 1.5, strokeLineDash: [4, 3], roughness: 1
+      }));
+
+      // Labels well above the curve at each region's midpoint
+      const midConfig = cut1 / 2;
+      const midPrompt = (cut1 + cut2) / 2;
+      const midAgent = (cut2 + 1) / 2;
+
+      // Config selectors (80%)
+      plG.append('text')
+        .attr('x', plX(midConfig) + 30).attr('y', plY(densityAt(midConfig)) - 36)
+        .attr('text-anchor', 'middle').attr('font-size', '10px')
+        .attr('fill', '#2a5a7b').attr('font-family', 'et-book, Palatino, Georgia, serif')
+        .text('Configured selectors');
+
+      // Per-page prompts (16%)
+      plG.append('text')
+        .attr('x', plX(midPrompt) + 30).attr('y', plY(densityAt(midPrompt)) - 10)
+        .attr('text-anchor', 'middle').attr('font-size', '10px')
+        .attr('fill', '#4a7080').attr('font-family', 'et-book, Palatino, Georgia, serif')
+        .text('Per-page prompts');
+
+      // Full agent (4%)
+      plG.append('text')
+        .attr('x', plX(midAgent)).attr('y', plY(densityAt(midAgent)) - 16)
+        .attr('text-anchor', 'middle').attr('font-size', '10px')
+        .attr('fill', '#888').attr('font-family', 'et-book, Palatino, Georgia, serif')
+        .text('Full agent');
+
+      // ── Bare power-law chart (no shading, no tier labels) ──
+      const bareContainer = document.getElementById('powerlaw-bare');
+      const bareSvg = d3.select(bareContainer).append('svg')
+        .attr('width', plWidth).attr('height', plHeight)
+        .attr('viewBox', `0 0 ${plWidth} ${plHeight}`)
+        .style('overflow', 'visible');
+
+      const bareG = bareSvg.append('g').attr('transform', `translate(${plMargin.left},${plMargin.top})`);
+      const rcBare = rough.svg(bareSvg.node());
+
+      // Axes
+      bareG.append('g').attr('transform', `translate(0,${plInner.h})`)
+        .call(d3.axisBottom(plX).ticks(5).tickFormat(d => Math.round(d * 100) + '%'))
+        .call(g => g.select('.domain').attr('stroke', '#999'))
+        .selectAll('text').attr('font-family', 'et-book, Palatino, Georgia, serif').attr('font-size', '11px');
+      bareG.append('g')
+        .call(d3.axisLeft(plY).ticks(0).tickSize(0))
+        .call(g => g.select('.domain').attr('stroke', '#999'));
+
+      // Axis labels
+      bareG.append('text').attr('x', plInner.w / 2).attr('y', plInner.h + 40)
+        .attr('text-anchor', 'middle').attr('font-size', '13px').attr('fill', '#333')
+        .attr('font-family', 'et-book, Palatino, Georgia, serif')
+        .text('Insurer portals (ranked by traffic) \u2192');
+      bareG.append('text').attr('transform', 'rotate(-90)').attr('x', -plInner.h / 2).attr('y', -20)
+        .attr('text-anchor', 'middle').attr('font-size', '13px').attr('fill', '#333')
+        .attr('font-family', 'et-book, Palatino, Georgia, serif')
+        .text('Users \u2192');
+
+      // Just the curve (sketchy)
+      const bareLine = d3.line().x(d => plX(d.rank)).y(d => plY(d.density)).curve(d3.curveMonotoneX);
+      bareG.node().appendChild(rcBare.path(bareLine(plData), {
+        ...rOpts, stroke: '#333', strokeWidth: 2, fill: 'none', roughness: 1.5
+      }));
+    });
+  </script>
+
+</body>
+
+</html>
