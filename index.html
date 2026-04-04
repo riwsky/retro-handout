@@ -258,14 +258,14 @@
           <strong>What about HIPAA?</strong>
           most users need to sign a release before their insurers will speak to us on their behalf.
           But those in-the-know might also ask why we didn&rsquo;t use the HIPAA-mandated APIs&mdash;the answer is that
-          Granted initially did, but those APIs do not include important info &mdash; most critically, dollar
+          Granted initially did, but those APIs do not include important info&mdash;most critically, dollar
           amounts.
         </span>
         things like explanations of benefits, claims details, or member&nbsp;ID cards.
         To save users the hassle of collecting that info themselves, we let them sign into their insurer&rsquo;s web portal through our
         app.<label for="sn-state-machine" class="margin-toggle sidenote-number"></label>
         <input type="checkbox" id="sn-state-machine" class="margin-toggle" />
-        <span class="sidenote">See <a href="#appendix-state-machine">Appendix: Portal Auth State Machine</a> for the
+        <span class="sidenote">See <a href="#appendix-state-machine">appendix</a> for the
           full login flow.</span>
       </p>
 
@@ -274,7 +274,7 @@
         Web browser automation<label for="sn-browser-automation" class="margin-toggle sidenote-number"></label>
         <input type="checkbox" id="sn-browser-automation" class="margin-toggle" />
         <span class="sidenote">
-          In theory, reverse-engineering portal auth endpoints and requesting them directly would be faster and more
+          In theory, reverse-engineering portal auth endpoints to make direct requests would be faster and more
           reliable than remote process automation—but in practice, many auth flows detect and bot-block anything short
           of a full browser. Insurers don&rsquo;t care about that after login, though&mdash;so once we got an access token, some
           of our code to crawl the logged-in portals did indeed make direct requests.
@@ -306,7 +306,7 @@
         Roughly, our goal was to <strong>minimize latency and dev effort, and maximize completion rate,</strong><label for="sn-completion-rate" class="margin-toggle sidenote-number"></label>
         <input type="checkbox" id="sn-completion-rate" class="margin-toggle" />
         <span class="sidenote">
-          We used <em>&ldquo;completion rate&rdquo;</em> instead of &ldquo;reliability&rdquo; because
+          We used &ldquo;completion rate&rdquo; instead of &ldquo;reliability&rdquo; because
           users forgetting their credentials or quitting mid-process aren&rsquo;t problems
           of software reliability <em>per se</em>. While we <em>had</em> initially focused on bare reliability,
           completion rates more directly
@@ -346,7 +346,7 @@
           time blocked on user input). The round-trips to the browsers were the main bottleneck—performance
           work in the LLM-using implementations focused on reducing those instead of request latency <em>per se</em>.
           For example: higher-order tools like
-          &ldquo;fillUsernameAndPassword&rdquo;, that took selectors for the inputs + submit button all at once,
+          &ldquo;fillMfaCode&rdquo; that took selectors for the inputs + submit button all at once,
           instead of prompting the LLM to parallelize fills and clicks.
         </span>
         we have one-shot prompts to recognize pages,
@@ -366,7 +366,7 @@
         in for the MFA page).<label for="sn-race" class="margin-toggle sidenote-number"></label>
         <input type="checkbox" id="sn-race" class="margin-toggle" />
         <span class="sidenote">
-          An example of when the single-page prompts needed to fall back to the full agent is when we first encountered
+          An example edge-case where the agent had to bail out the single-page prompts is the first time we encountered
           an MFA entry screen with separate inputs per-digit: the prompt had been locked into providing one selector
           for the code input + one for the submit button, never needing to see the user&rsquo;s digits, whereas the full agent
           was free to make individual fill and click calls, with the digits in context.
@@ -390,21 +390,23 @@
       <figure class="fullwidth">
         <div class="diagram-container fullwidth">
           <pre class="mermaid">
-flowchart TB
+flowchart BT
+  subgraph SIE["Sign-In Engine"]
+    Engine["Control Loop"]
+    Config["Configured\nSelectors"]
+    AI["Agent"]
+    SS["Single-Shot Prompts"]
+    PW["Playwright\n(via Browserbase)"]
+  end
+
+  Temporal["Temporal"]
+  NEST["NestJS"]
+  DB["Gel\n(Database)"]
+
   subgraph Client["Clients"]
     Mobile["React Native"]
     Web["Next.js"]
   end
-
-  NEST["NestJS"]
-  Temporal["Temporal"]
-  DB["Gel\n(Database)"]
-
-  Engine["Sign-In Engine"]
-  Config["Configured\nSelectors"]
-  AI["Agent"]
-  SS["Single-Shot Prompts"]
-  PW["Playwright\n(via Browserbase)"]
 
   Mobile -->|"GraphQL"| NEST
   Web -->|"GraphQL"| NEST
@@ -471,8 +473,7 @@ flowchart TB
       </p>
 
       <p>
-        <strong>LLM-as-judge:</strong>
-        <label for="sn-judge" class="margin-toggle sidenote-number"></label>
+        <strong>LLM-as-judge:</strong><label for="sn-judge" class="margin-toggle sidenote-number"></label>
         <input type="checkbox" id="sn-judge" class="margin-toggle" />
         <span class="sidenote">
           Judginess was also the source of a pretty avant-garde bug: our intercepting MFA
@@ -634,6 +635,7 @@ stateDiagram-v2
 
     SecurityQuestionErrored --> SecurityQuestion : retry
 
+    Success : Crawl the signed-in state of the portal
     Success --> [*]
 </pre>
         </div>
