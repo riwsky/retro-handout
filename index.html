@@ -445,83 +445,37 @@ flowchart BT
 
     <!-- ═══════════════════════════════════════════════ -->
     <section>
-      <h2>Operability and Observability</h2>
+      <h2>Execution</h2>
 
       <p>
-        <strong>OpenTelemetry:</strong> distributed tracing, exported to <a
-          href="https://www.honeycomb.io/">Honeycomb</a>.
-        Every sign-in attempt is a trace that spans the full stack: GraphQL mutation &rarr; Temporal workflow &rarr;
-        Playwright interactions &rarr; LLM calls. Each layer annotates the trace
-        with its own attributes (e.g., <code>browserbase.session.advanced_stealth_enabled</code>).
+        <span class="newthought">I was the main engineer for both the frontend and backend of the sign-in flow,</span> 
+        paired with a dedicated PM and a dedicated Designer who explored how it should behave. As the first teammember doing agentic LLM work in our codebase, back in 2024, I was also responsible for designing in-house libraries that are available nowadays off the shelf (like type-safe tool calling, telemetry, or retry-aware prompt management).
       </p>
 
       <p>
-        <strong>Playwright traces:</strong> allowed us to reconstruct the DOM for debugging.<label for="sn-click" class="margin-toggle sidenote-number"></label>
+        Two engineering teammates worked on what happened after sign-in: one owned
+ crawling the portals, the other owned ingesting and normalization of the data into FHIR.<label for="sn-jq" class="margin-toggle sidenote-number"></label>
+        <input type="checkbox" id="sn-jq" class="margin-toggle" />
+        <span class="sidenote"><strong>Jagged intelligence:</strong> my colleague working on ingestion started with a YAML-based transformation DSL for LLMs to write, because it was simpler than a full programming language and thus argued to be easier. For humans, it <em>would</em> be&mdash;but problem was, our little DSL was nowhere in the pretraining corpus. Agents struggled to write syntactically-valid mappings, much less semantically valid ones. He eventually tried my suggestion of jq; it immediately worked much better.</span></p>
+
+        <p>
+        We deployed on a daily basis, with rollouts managed by feature flags (some in LaunchDarkly, some in our own system). We built a gauntlet of simulated insurance portals to exercise the code. Monitoring included distributed OpenTelemetry traces in <a
+          href="https://www.honeycomb.io/">Honeycomb</a>, playwright traces stored in s3,<label for="sn-click" class="margin-toggle sidenote-number"></label>
         <input type="checkbox" id="sn-click" class="margin-toggle" />
         <span class="sidenote">
-          Portals we needed to debug tended to bug real users, too. Investigating one issue with
-          United,
+          These allowed us to reconstruct the DOM for debugging, and portals that bugged our agents tended to bug real users, too. Investigating one issue with United,
           I came upon a whole forum thread from a retirement community
           complaining about the same error message (presumably having been caught in some bad IP block,
           or using accessibility devices that produced bot-like interaction patterns).
-        </span>
-        When we rolled out
-        the hybrid system, we also used these to source configured selectors, letting more portals reach that
-        top tier of performance.
-      </p>
-
-      <p>
-        <strong>Internal dashboard:</strong> We tracked high-signal data in our database, as well,
-        for longer-term analytics and eval context. That data also powered attempts to automate tuning (multi-armed bandit
-        for stealth/proxy settings per insurer), but those ended up
-        being more complexity than they were worth.
-      </p>
-
-      <p>
-        <strong>LLM-as-judge:</strong><label for="sn-judge" class="margin-toggle sidenote-number"></label>
-        <input type="checkbox" id="sn-judge" class="margin-toggle" />
+        </span> and manual reviews recorded via an internal app; these reviews were later used to build an LLM-as-judge<label for="sn-judge" class="margin-toggle sidenote-number"></label> <input type="checkbox" id="sn-judge" class="margin-toggle" />
         <span class="sidenote">
-          Judginess was also the source of a pretty avant-garde bug: our intercepting MFA
-          for users and accessing PHI had been occasionally triggering refusals at the LLM API level—but when we
+          Judginess also triggered an only-in-the-2020s bug: our intercepting MFA
+          for users and accessing PHI had been occasionally triggering LLM API refusals—but when we
           explained
           (in-prompt) that this was done with user consent, and that the adversarial reverse-engineering task was
           merely an epiphenomenon
           of broken financial incentives in the health system, the refusals went away.
-        </span>
-        I used my notes and tags from manual reviews as an eval suite for an LLM
-        characterize results for us. Useful to automatically distinguish reliability failures (i.e., bugs) from
-        mere incompletions (e.g. user quitting). Avoided certain classes of hallucination by using Anthropic's Citation API.
-      </p>
-
-      <p>
-        <strong>Simulation testing:</strong> we had a gauntlet of simulated insurance portal flows to exercise
-        control flow or specific scenarios, as well as some more isolated snapshots from real production pages
-        to check the prompts still held up under noisier real-world HTML (which tended to be much gnarlier than our
-        vibe-coded playground apps).
-      </p>
-
-    </section>
-
-    <!-- ═══════════════════════════════════════════════ -->
-    <section>
-      <h2>Execution</h2>
-
-      <p>
-        <span class="newthought">I did plenty of the frontend engineering</span> for this feature, though
-        Granted also had a dedicated PM and a dedicated Designer who directed how it should behave.
-      </p>
-
-      <p>
-        What happened after sign-in was primarily two teammates' responsibility: one owned
- crawling the portals, the other owned ingesting and normalization of the data into FHIR.
-      </p>
-
-      <p>
-        We also collaborated with Browserbase, who specialize in Playwright proxying and
-        stealth. Bot detection is a cat-and-mouse game—and with large insurers employing companies
-        like Akamai, who have more bot-detection engineers than Granted has employees, we would not be
-        effective players.
-      </p>
+        </span>workflow to automatically distinguish reliability failures (i.e., bugs) from mere incompletions (e.g. user quitting).</p>
 
     </section>
 
