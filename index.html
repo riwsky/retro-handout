@@ -643,64 +643,6 @@ stateDiagram-v2
       </figure>
     </section>
 
-    <!-- ═══════════════════════════════════════════════ -->
-    <section>
-      <h2>Appendix: Temporal Workflow Lifecycle</h2>
-
-      <p>The interactive sign-in flow, from the user&rsquo;s perspective:</p>
-
-      <figure class="fullwidth">
-        <div class="diagram-container fullwidth">
-          <pre class="mermaid">
-sequenceDiagram
-    participant U as User (Mobile App)
-    participant G as GraphQL API
-    participant T as Temporal Workflow
-    participant B as Browserbase + Playwright
-    participant S as Sign-In Engine
-
-    U->>G: startLinkSignIn(linkId)
-    G->>T: start userTriggeredCrawlerWorkflow
-    T->>B: create CDP session (bandit selects stealth/proxy strategy)
-    B->>S: initialize Playwright page
-
-    S->>S: navigate to loginUrl
-    S->>S: race(config, AI) → recognize login page
-
-    T-->>G: update status: PROMPTING_CREDENTIALS
-    G-->>U: show credentials prompt
-
-    U->>G: submitLoginDetails(username, password)
-    G->>T: Temporal update → submitLoginDetails
-    T->>S: provide credentials
-
-    S->>S: race(config, AI) → fill + submit credentials
-    S->>S: race(config, AI) → recognize post-login state
-
-    alt MFA Required
-        T-->>G: update status: PROMPTING_MFA_METHOD
-        G-->>U: show MFA options
-        U->>G: selectMfaMethod(SMS)
-        G->>T: Temporal update → selectMfaMethod
-        T->>S: select MFA method
-
-        T-->>G: update status: PROMPTING_MFA_CODE
-        G-->>U: show MFA code input
-        U->>G: submitMfaCode(123456)
-        G->>T: Temporal update → submitMfaCode
-        T->>S: enter MFA code
-    end
-
-    S->>S: recognize success
-    T-->>G: update status: LOGGED_IN
-    T->>B: begin data extraction (crawl objectives)
-    G-->>U: show claims data
-</pre>
-        </div>
-      </figure>
-
-    </section>
-
     <p class="colophon">
       All of this prose was human-written; typography and diagram design was handled by Claude, with use of
       <a href="https://edwardtufte.github.io/tufte-css/">tufte-css</a>,
