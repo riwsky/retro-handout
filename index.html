@@ -483,34 +483,6 @@ flowchart BT
     <section>
       <h2>Outcomes and Reflection</h2>
 
-      <p>
-        <span class="newthought">If I were starting over,</span> I would:
-      </p>
-
-      <p>
-        <strong>Lean on vendors for anti-anti-bot measures more, and sooner.</strong> Much of the design's leverage came
-        from the insurer-size power-law: focusing performance upgrades on the top portals is more
-        worthwhile when they serve an outsize share of users&mdash;but for anti-bot detection, that
-        asymmetry meant our efforts were <em>less</em> worthwhile.
-      </p>
-
-      <p>
-        <strong>Let agents run end-to-end simulations sooner.</strong>
-        These were originally at the unit level, with end-to-end testing reserved for
-        real insurer websites. While this tradeoff made sense comparing human effort for the two
-        kinds of tests,
-        the real difference-maker was letting agents exercise more of their logic and control flow independently.
-      </p>
-
-      <p><strong>Avoid <em>pre</em>-inventing the wheel:</strong> When I first set out to build this, the AI tooling and
-        browsing landscape was in its infancy.
-        In the time since, libraries have come out that either directly line up with work we did (e.g. OpenAI&rsquo;s
-        TypeScript packages gained built-in <a href="https://zod.dev/">zod</a> support) or have built higher-level
-        interfaces (e.g. browserbase&rsquo;s
-        <a href="https://www.stagehand.dev/">stagehand</a> library)—while
-        they were not an option when we started, and we have adopted them in places, they&rsquo;re still something that
-        would look different if starting that project today.
-      </p>
 
       <p><span class="newthought">The system unlocked portals beyond our insurers,</span><label for="sn-ehr" class="margin-toggle sidenote-number"></label>
         <input type="checkbox" id="sn-ehr" class="margin-toggle" />
@@ -550,6 +522,35 @@ flowchart BT
           </tr>
         </tbody>
       </table>
+
+      <p>
+        <span class="newthought">If I were starting over,</span> I would:
+      </p>
+
+      <p>
+        <strong>Lean on vendors for anti-anti-bot measures more, and sooner.</strong> Much of the design's leverage came
+        from the insurer-size power-law: focusing performance upgrades on the top portals is more
+        worthwhile when they serve an outsize share of users&mdash;but for anti-bot detection, that
+        asymmetry meant our efforts were <em>less</em> worthwhile.
+      </p>
+
+      <p>
+        <strong>Let agents run end-to-end simulations sooner.</strong>
+        These were originally at the unit level, with end-to-end testing reserved for
+        real insurer websites. While this tradeoff made sense comparing human effort for the two
+        kinds of tests,
+        the real difference-maker was letting agents exercise more of their logic and control flow independently.
+      </p>
+
+      <p><strong>Avoid <em>pre</em>-inventing the wheel:</strong> When I first set out to build this, the AI tooling and
+        browsing landscape was in its infancy.
+        In the time since, libraries have come out that either directly line up with work we did (e.g. OpenAI&rsquo;s
+        TypeScript packages gained built-in <a href="https://zod.dev/">zod</a> support) or have built higher-level
+        interfaces (e.g. browserbase&rsquo;s
+        <a href="https://www.stagehand.dev/">stagehand</a> library)—while
+        they were not an option when we started, and we have adopted them in places, they&rsquo;re still something that
+        would look different if starting that project today.
+      </p>
     </section>
 
     <!-- ═══════════════════════════════════════════════ -->
