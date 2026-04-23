@@ -53,8 +53,18 @@ const libsDir = path.join(__dirname, 'libs');
   await page.waitForSelector('.mermaid svg');
   await page.waitForTimeout(1500);
 
+  // Strip page/svg backgrounds so omitBackground produces true alpha.
+  await page.addStyleTag({
+    content: `
+      html, body, article, section, figure, .mermaid, svg { background: transparent !important; }
+      .mermaid svg, .mermaid svg .background { background-color: transparent !important; fill: transparent !important; }
+    `,
+  });
+
+  const shot = { omitBackground: true };
+
   // Bare power-law curve
-  await (await page.$('#powerlaw-bare svg')).screenshot({ path: path.join(outDir, 'longtail.png') });
+  await (await page.$('#powerlaw-bare svg')).screenshot({ path: path.join(outDir, 'longtail.png'), ...shot });
 
   // Pareto frontier: labels extend past the SVG (overflow:visible), so
   // clip a padded region of the page instead of the element's own bbox.
@@ -70,15 +80,15 @@ const libsDir = path.join(__dirname, 'libs');
       height: r.height + pad * 2,
     };
   });
-  await page.screenshot({ path: path.join(outDir, 'frontier.png'), clip: paretoClip });
+  await page.screenshot({ path: path.join(outDir, 'frontier.png'), clip: paretoClip, ...shot });
 
   // Shaded power-law with the three coverage tiers
-  await (await page.$('#powerlaw-plot svg')).screenshot({ path: path.join(outDir, 'tiers.png') });
+  await (await page.$('#powerlaw-plot svg')).screenshot({ path: path.join(outDir, 'tiers.png'), ...shot });
 
   // Mermaid: [0] is the architecture flowchart, [1] is the appendix state machine
   const mermaids = await page.$$('.mermaid svg');
-  await mermaids[0].screenshot({ path: path.join(outDir, 'architecture.png') });
-  await mermaids[1].screenshot({ path: path.join(outDir, 'statemachine.png') });
+  await mermaids[0].screenshot({ path: path.join(outDir, 'architecture.png'), ...shot });
+  await mermaids[1].screenshot({ path: path.join(outDir, 'statemachine.png'), ...shot });
 
   await browser.close();
 })();
