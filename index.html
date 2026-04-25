@@ -303,7 +303,7 @@
           If you squint, the problem of &ldquo;sign in to an insurer portal we&rsquo;ve never seen before&rdquo; contains, as a special
           case, the problem of &ldquo;sign in to a portal we&rsquo;ve seen before, but that just updated its login pages&rdquo;&mdash;and the
           AI approach indeed handled changes like that which had broken the hard-coded selectors.
-          We collect both kinds of novelty handling as &ldquo;robustness&rdquo;, below.
+          We collect both kinds of novelty handling as &ldquo;reliability&rdquo;, below.
         </span>
       </p>
 
@@ -332,7 +332,7 @@
     </section>
 
     <section>
-      <h2>The Robustness&ndash;Speed Frontier</h2>
+      <h2>The Reliability&ndash;Speed Frontier</h2>
 
       <p>
         <span class="newthought">The system faces a tradeoff</span> between reliability on novel portals
@@ -346,7 +346,7 @@
 
       <p>
         On the top left, you have our pre-AI setup of hand-written element selectors for each portal.
-        Moving to the right (more robust) and down (slower),<label for="sn-slower" class="margin-toggle sidenote-number"></label>
+        Moving to the right (more reliable) and down (slower),<label for="sn-slower" class="margin-toggle sidenote-number"></label>
         <input type="checkbox" id="sn-slower" class="margin-toggle" />
         <span class="sidenote">
           <strong>How much slower?</strong> Roughly 90 seconds for the agent vs roughly 30 seconds for the hard-coded one (ignoring
@@ -398,27 +398,37 @@
         <div class="diagram-container fullwidth">
           <pre class="mermaid">
 flowchart BT
-  subgraph SIE["Sign-In Engine"]
-    Engine["Control Loop"]
-    Config["Configured\nSelectors"]
-    AI["Agent"]
-    SS["Single-Shot Prompts"]
-    PW["Playwright\n(via Browserbase)"]
-  end
-
-  Temporal["Temporal"]
-  NEST["API Server (NestJS)"]
-  DB["Database"]
-
   subgraph Client["Clients"]
+    direction LR
     Mobile["Mobile (React Native)"]
     Web["Web (Next.js)"]
   end
 
-  Mobile --> NEST
-  Web --> NEST
-  NEST --> Temporal
-  Temporal --> Engine
+  NEST["API Server (NestJS)"]
+
+  subgraph Storage["Durable Storage"]
+    direction LR
+    Temporal["Temporal"]
+    DB[("Database")]
+  end
+
+  subgraph SIE["Sign-In Engine"]
+    direction TB
+    Engine["Control Loop"]
+    Config["Configured\nSelectors"]
+    SS["Single-Shot Prompts"]
+    AI["Agent"]
+    PW["Playwright\n(via Browserbase)"]
+    Reviewer["Automated Reviewer"]
+  end
+
+  Crawl["Portal Crawl"]
+  Norm["Data Normalization"]
+
+  Client --> NEST
+  NEST --> Storage
+  Storage <--> SIE
+  SIE --> Crawl
   Engine -->|"race"| Config
   Engine -->|"race"| AI
   Engine -->|"race"| SS
@@ -426,9 +436,9 @@ flowchart BT
   AI --> PW
   SS --> PW
   PW -->|"filtered HTML, screenshots, etc"| Engine
-  Engine -.-> Temporal
-  NEST --> DB
-  Engine --> DB
+  Crawl --> Norm
+  Storage <--> Crawl
+  Storage <--> Norm
 
   click Mobile href "https://reactnative.dev/" _blank
   click Web href "https://nextjs.org/" _blank
@@ -612,7 +622,7 @@ stateDiagram-v2
         fontFamily: 'et-book, Palatino, "Palatino Linotype", Georgia, serif',
         fontSize: '14px',
       },
-      flowchart: { curve: 'basis', padding: 20 },
+      flowchart: { curve: 'basis', padding: 20, htmlLabels: false },
       sequence: { mirrorActors: false, messageMargin: 40 },
       stateDiagram: { defaultRenderer: 'dagre' },
     });
@@ -632,7 +642,7 @@ stateDiagram-v2
       const data = [
         {
           name: "Configured Selectors",
-          robustness: 0.15,
+          reliability: 0.15,
           speed: 0.92,
           color: "#4a7c9b",
           description: "Hand-coded XPath selectors for known portals (Cigna, UHC, Anthem). Fastest path\u2009\u2014\u2009pure deterministic code, no LLM calls. Breaks when a portal redesigns. Covers the ~20 highest-traffic portals.",
@@ -640,7 +650,7 @@ stateDiagram-v2
         },
         {
           name: "Per-Page Prompts",
-          robustness: 0.6,
+          reliability: 0.6,
           speed: 0.55,
           color: "#4a7c9b",
           description: "Single LLM call with page screenshot + filtered HTML. The model identifies form fields and returns a structured response. Works on most standard login forms without prior configuration.",
@@ -648,7 +658,7 @@ stateDiagram-v2
         },
         {
           name: "Full Multi-Turn Agent",
-          robustness: 0.95,
+          reliability: 0.95,
           speed: 0.12,
           color: "#4a7c9b",
           description: "Claude with vision iterating over page state with the full browsing tool suite (click, type, scroll, screenshot). Handles novel portals, unusual MFA flows, and unexpected intermediate screens. Most expensive in tokens and time.",
@@ -689,11 +699,11 @@ stateDiagram-v2
       g.append('text').attr('x', inner.w / 2).attr('y', inner.h + 40)
         .attr('text-anchor', 'middle').attr('font-size', '13px').attr('fill', '#333')
         .attr('font-family', 'et-book, Palatino, Georgia, serif')
-        .text('Robustness (handles novel portals) \u2192');
+        .text('Reliability \u2192');
       g.append('text').attr('transform', 'rotate(-90)').attr('x', -inner.h / 2).attr('y', -45)
         .attr('text-anchor', 'middle').attr('font-size', '13px').attr('fill', '#333')
         .attr('font-family', 'et-book, Palatino, Georgia, serif')
-        .text('Speed (low latency) \u2192 ');
+        .text('Speed \u2192 ');
 
       // Low/High labels
       g.append('text').attr('x', x(0.02)).attr('y', inner.h + 22).attr('font-size', '10px').attr('fill', '#999').text('Low');
@@ -702,7 +712,7 @@ stateDiagram-v2
       g.append('text').attr('x', -10).attr('y', y(0.97)).attr('font-size', '10px').attr('fill', '#999').attr('text-anchor', 'end').text('High');
 
       // Dashed frontier curve through the 3 base points
-      const line = d3.line().x(d => x(d.robustness)).y(d => y(d.speed)).curve(d3.curveCatmullRom);
+      const line = d3.line().x(d => x(d.reliability)).y(d => y(d.speed)).curve(d3.curveCatmullRom);
       const curveD = line(data);
       g.node().appendChild(rc.path(curveD, {
         ...rOpts, stroke: '#bbb', strokeWidth: 1.5, fill: 'none',
@@ -711,7 +721,7 @@ stateDiagram-v2
 
       // Points
       data.forEach(d => {
-        g.node().appendChild(rc.circle(x(d.robustness), y(d.speed), 16, {
+        g.node().appendChild(rc.circle(x(d.reliability), y(d.speed), 16, {
           ...rOpts, fill: '#4a7c9b', stroke: '#2a5a7b', strokeWidth: 1.5,
           fillStyle: 'solid', roughness: 1
         }));
@@ -719,7 +729,7 @@ stateDiagram-v2
 
       // Labels
       g.selectAll('.frontier-label').data(data).enter().append('text')
-        .attr('x', d => x(d.robustness)).attr('y', d => y(d.speed) - 14)
+        .attr('x', d => x(d.reliability)).attr('y', d => y(d.speed) - 14)
         .attr('text-anchor', 'middle').attr('font-size', '11.5px').attr('font-weight', 'bold')
         .attr('fill', '#333').attr('font-family', 'et-book, Palatino, Georgia, serif')
         .text(d => d.name);
@@ -731,7 +741,7 @@ stateDiagram-v2
 
         let closest = null, minDist = Infinity;
         for (const pt of allPoints) {
-          const dist = Math.hypot(pt.robustness - dataX, pt.speed - dataY);
+          const dist = Math.hypot(pt.reliability - dataX, pt.speed - dataY);
           if (dist < minDist) { minDist = dist; closest = pt; }
         }
 
@@ -750,8 +760,8 @@ stateDiagram-v2
 
       // ── Power-law insurer distribution chart ──
       const plContainer = document.getElementById('powerlaw-plot');
-      const plMargin = { top: 20, right: 30, bottom: 50, left: 60 };
-      const plWidth = 520, plHeight = 300;
+      const plMargin = { top: 20, right: 30, bottom: 32, left: 60 };
+      const plWidth = 520, plHeight = 282;
       const plInner = { w: plWidth - plMargin.left - plMargin.right, h: plHeight - plMargin.top - plMargin.bottom };
 
       // Pareto PDF: f(x) = k*(1-x)^(k-1), where k is chosen so that
@@ -779,18 +789,17 @@ stateDiagram-v2
 
       // Axes — minimal, no ticks on Y (illustrative)
       plG.append('g').attr('transform', `translate(0,${plInner.h})`)
-        .call(d3.axisBottom(plX).ticks(5).tickFormat(d => Math.round(d * 100) + '%'))
-        .call(g => g.select('.domain').attr('stroke', '#999'))
-        .selectAll('text').attr('font-family', 'et-book, Palatino, Georgia, serif').attr('font-size', '11px');
+        .call(d3.axisBottom(plX).ticks(0).tickSize(0))
+        .call(g => g.select('.domain').attr('stroke', '#999'));
       plG.append('g')
         .call(d3.axisLeft(plY).ticks(0).tickSize(0))
         .call(g => g.select('.domain').attr('stroke', '#999'));
 
       // Axis labels
-      plG.append('text').attr('x', plInner.w / 2).attr('y', plInner.h + 40)
+      plG.append('text').attr('x', plInner.w / 2).attr('y', plInner.h + 22)
         .attr('text-anchor', 'middle').attr('font-size', '13px').attr('fill', '#333')
         .attr('font-family', 'et-book, Palatino, Georgia, serif')
-        .text('Insurer portals (ranked by traffic) \u2192');
+        .text('Insurers \u2192');
       plG.append('text').attr('transform', 'rotate(-90)').attr('x', -plInner.h / 2).attr('y', -20)
         .attr('text-anchor', 'middle').attr('font-size', '13px').attr('fill', '#333')
         .attr('font-family', 'et-book, Palatino, Georgia, serif')
@@ -877,18 +886,17 @@ stateDiagram-v2
 
       // Axes
       bareG.append('g').attr('transform', `translate(0,${plInner.h})`)
-        .call(d3.axisBottom(plX).ticks(5).tickFormat(d => Math.round(d * 100) + '%'))
-        .call(g => g.select('.domain').attr('stroke', '#999'))
-        .selectAll('text').attr('font-family', 'et-book, Palatino, Georgia, serif').attr('font-size', '11px');
+        .call(d3.axisBottom(plX).ticks(0).tickSize(0))
+        .call(g => g.select('.domain').attr('stroke', '#999'));
       bareG.append('g')
         .call(d3.axisLeft(plY).ticks(0).tickSize(0))
         .call(g => g.select('.domain').attr('stroke', '#999'));
 
       // Axis labels
-      bareG.append('text').attr('x', plInner.w / 2).attr('y', plInner.h + 40)
+      bareG.append('text').attr('x', plInner.w / 2).attr('y', plInner.h + 22)
         .attr('text-anchor', 'middle').attr('font-size', '13px').attr('fill', '#333')
         .attr('font-family', 'et-book, Palatino, Georgia, serif')
-        .text('Insurer portals (ranked by traffic) \u2192');
+        .text('Insurers \u2192');
       bareG.append('text').attr('transform', 'rotate(-90)').attr('x', -plInner.h / 2).attr('y', -20)
         .attr('text-anchor', 'middle').attr('font-size', '13px').attr('fill', '#333')
         .attr('font-family', 'et-book, Palatino, Georgia, serif')

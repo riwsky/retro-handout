@@ -61,6 +61,22 @@ const libsDir = path.join(__dirname, 'libs');
     `,
   });
 
+  // Mermaid injects ID-scoped !important CSS that beats class-only rules, so
+  // patch fills/backgrounds inline on each element after it renders.
+  await page.evaluate(() => {
+    const setFill = (sel) => document.querySelectorAll(sel).forEach(el => {
+      el.setAttribute('fill', 'transparent');
+      el.style.setProperty('fill', 'transparent', 'important');
+    });
+    const setBg = (sel) => document.querySelectorAll(sel).forEach(el => {
+      el.style.setProperty('background-color', 'transparent', 'important');
+      el.style.setProperty('background', 'transparent', 'important');
+    });
+    setFill('.mermaid svg .cluster rect, .mermaid svg .cluster polygon, .mermaid svg .cluster path');
+    setFill('.mermaid svg .node rect, .mermaid svg .node circle, .mermaid svg .node ellipse, .mermaid svg .node polygon, .mermaid svg .node path');
+    setBg('.mermaid svg span.edgeLabel, .mermaid svg span.nodeLabel, .mermaid svg .labelBkg, .mermaid svg foreignObject > div');
+  });
+
   const shot = { omitBackground: true };
 
   // Bare power-law curve
