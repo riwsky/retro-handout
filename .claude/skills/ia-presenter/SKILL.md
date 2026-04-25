@@ -1,6 +1,6 @@
 ---
 name: ia-presenter
-description: Author and iterate on iA Presenter presentations (.iapresenter bundles) on macOS. Use whenever the user mentions iA Presenter, .iapresenter, an upcoming talk or slide deck where iA Presenter is the target tool, or wants to script-first / markdown-based slides. Also use when iterating on slide layout, themes, image sizing, or when iA Presenter's import is producing wrong slide breaks. iA Presenter has no CLI or API — this skill documents the bundle structure and the hot-reload-text.md trick that's the de facto agent-friendly path, plus the small set of image/layout directives that solve 90% of layout issues.
+description: Author and iterate on iA Presenter presentations (.iapresenter bundles) on macOS. Use whenever the user mentions iA Presenter, .iapresenter, an upcoming talk or slide deck where iA Presenter is the target tool, or wants to script-first / markdown-based slides. Also use when iterating on slide layout, themes, image sizing, multi-image slides, on-slide tables, or when iA Presenter's import is producing wrong slide breaks. Also use when generating diagram PNGs (mermaid, d3, etc.) for embedding in slides — this skill has the chromium-foreignObject transparency gotchas. iA Presenter has no CLI or API — this skill documents the bundle structure and the hot-reload-text.md trick that's the de facto agent-friendly path, plus the small set of image/layout directives that solve 90% of layout issues.
 ---
 
 # iA Presenter
@@ -134,6 +134,57 @@ For a title slide with subtitle:
 
 The tab-indented line becomes a subtitle on the slide.
 
+For a scannable list of topics on a slide (an agenda, sub-sections of a discussion), use `####`:
+
+```markdown
+# Execution
+
+#### Defining reliability
+#### Crawling
+#### Normalization
+#### "Fun" with feature flags
+```
+
+Each `####` renders as a smaller line of text on the slide. This sidesteps the bullet-list anti-pattern while still surfacing a scannable map of what the slide covers — you're showing section titles, not reading sentences aloud.
+
+### Tables (and table-charts)
+
+Markdown tables are first-class on slides — reach for them when the data is denser as a table than as a chart, or when an axis chart would imply false precision the numbers don't have. Standard pipe syntax:
+
+```markdown
+|         | Series 1 | Series 2 |
+| :------ | :------- | :------- |
+| Group A | 10       | 15       |
+| Group B | 20       | 25       |
+```
+
+iA renders the table at slide width. To turn the same table into a bar/line/pie chart, append a `Chart:` directive (and optional axis labels) below it:
+
+```markdown
+|         | Series 1 |
+| :------ | :------- |
+| Group A | 10       |
+| Group B | 20       |
+Chart: Bar
+yLabel: Y Axis Label
+```
+
+Useful when you want a real chart from authored data without an external render pipeline. For anything fancy (custom axes, sketchy/illustrative styles, multi-series with bespoke treatments), keep rendering externally and embed as a PNG.
+
+### Multiple images on one slide
+
+Stack image blocks (path + directives) separated by a blank line; iA lays them out side-by-side or top/bottom based on the slide's aspect ratio:
+
+```markdown
+/assets/diagram-a.png
+size: contain
+
+/assets/diagram-b.png
+size: contain
+```
+
+Pairs well with omitting `# Heading` so the visuals get the full canvas. If the auto-layout sizes them inconsistently, re-render the source images at matching aspect ratios — iA respects intrinsic image dimensions.
+
 ### Image-then-heading vs heading-then-image
 
 iA's auto-layout picks layout based on element order. Putting the image *first* tends to make it dominant; putting the heading first tends toward heading-left/image-right. Try both if a slide feels off.
@@ -149,6 +200,17 @@ Mitigations, in order of preference:
 3. **`background: true`** — only if the diagram is OK with a heading overlaid on it. Usually it isn't.
 
 Don't try to override layouts with CSS classes or position pixel-pushing per slide; you'll fight the responsive engine and the deck will break on different displays.
+
+## Generating diagrams as PNG assets
+
+Decks often embed diagrams rendered externally (mermaid, d3, plot images). A few things to get right when rendering specifically for slide use, since slide audiences won't tolerate the rough edges that survive in a long-form web doc:
+
+- **Render at a slide-friendly aspect ratio** — close to the slide cell's shape (think 4:3 or 16:9, or vertical when paired with another image). Wide system diagrams hit the layout limits described above.
+- **Render with a transparent background.** Slides may use a non-white theme, and even on a white theme, an explicit white panel inside an image reads as a visible rectangle (anti-aliasing edges, slight color mismatch). Transparent fills composite cleanly on whatever background the deck ends up using.
+- **For mermaid via headless chrome (puppeteer/playwright):** set `flowchart: { htmlLabels: false }` in `mermaid.initialize`. Without it, chromium rasterizes `<foreignObject>` HTML labels with opaque white pixels regardless of CSS overrides — there's no way to fix it from the outside. Mermaid also injects ID-scoped `!important` CSS (`#mermaid-XXXX .edgeLabel { … !important }`) that beats class-only stylesheet rules. Patch fills via inline-style after render: `el.style.setProperty('fill', 'transparent', 'important')`. Sweep over `.node rect`, `.cluster rect`, `span.edgeLabel`, `.labelBkg`, etc.
+- **Verify transparency on a colored background**, not by eyeballing the PNG in a viewer — most viewers (and Claude Code's image preview) show transparent pixels as white, so a fully white-filled image and a fully transparent image look identical. Composite the PNG onto a non-white page and re-screenshot, or sample alpha values directly with a PNG library.
+
+These are tedious one-time setups, but pay off across the whole deck and any future revisions.
 
 ## Themes
 
